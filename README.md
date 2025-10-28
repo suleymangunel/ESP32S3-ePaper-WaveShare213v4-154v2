@@ -9,6 +9,9 @@ It handles full SPI communication, monochrome buffer rotation, LVGL framebuffer 
 
 ## 🖥️ Features
 
+✅ Dual support for Waveshare 1.54″ V2 and 2.13″ V4
+✅ The new rotation feature (ROTATE define)
+
 - 🧠 **SSD1680 Register-Level Driver**  
   Full initialization and control sequence implemented from the official datasheet.
 
