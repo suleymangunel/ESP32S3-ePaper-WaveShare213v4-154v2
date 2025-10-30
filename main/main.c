@@ -266,18 +266,18 @@ static void rgb565_to_mono(const lv_color16_t *src, uint8_t *dst, int w, int h)
     }
 }
 
-// Flush callback - RGB565'i mono'ya çevir ve e-paper'a gönder
+// Flush callback - Convert RGB565 to monochrome and send to e-paper
 static void my_disp_flush(lv_display_t *disp, const lv_area_t *area, uint8_t *px_map)
 {
     ESP_LOGI(TAG, ">>> FLUSH CALLED <<<");
     
     static uint8_t mono_buf[EPD_BUFFER_SIZE];
     
-    // RGB565 buffer'ını mono'ya çevir - LVGL buffer is 250x122, converts to rotated 122x250
+    // Covert RGB565 buffer to mono - LVGL buffer is 250x122, converts to rotated 122x250
     //rgb565_to_mono((lv_color16_t *)px_map, mono_buf, (ROTATE==0?EPD_WIDTH:EPD_HEIGHT), (ROTATE==0?EPD_HEIGHT:EPD_WIDTH));
     rgb565_to_mono((lv_color16_t *)px_map, mono_buf, EPD_WIDTH, EPD_HEIGHT);
     
-    // E-paper'a gönder
+    // Send to E-paper
     epd_set_cursor(0, 0);
     epd_send_cmd(SSD1680_CMD_WRITE_RAM_BW);  // Write RAM (Black/White)
     epd_send_data_buffer(mono_buf, EPD_BUFFER_SIZE);
@@ -297,18 +297,18 @@ static void lv_tick_task(void *arg)
     }
 }
 
-// Ekranı silme ve kapatma task'ı
+// Screen clean and Off task
 static void screen_off_task(void *arg)
 {
-    // 10 saniye bekle
+    // Wait 10 seconds
     vTaskDelay(pdMS_TO_TICKS(10000));
     
     ESP_LOGI(TAG, "10 seconds passed - clearing and turning off screen");
     
-    // Ekranı beyaza çevir (temizle)
+    // Convert screen to white (clear)
     uint8_t *white_buf = heap_caps_malloc(EPD_BUFFER_SIZE, MALLOC_CAP_DMA);
     if (white_buf) {
-        memset(white_buf, 0xFF, EPD_BUFFER_SIZE);  // 0xFF = beyaz
+        memset(white_buf, 0xFF, EPD_BUFFER_SIZE);  // 0xFF = White
         
         ESP_LOGI(TAG, "Clearing screen...");
         epd_set_cursor(0, 0);
@@ -320,17 +320,17 @@ static void screen_off_task(void *arg)
         heap_caps_free(white_buf);
     }
     
-    // 1 saniye bekle
+    // Wait 1 second
     vTaskDelay(pdMS_TO_TICKS(1000));
     
-    // Ekranı kapat (deep sleep)
+    // Turn off screen (deep sleep)
     ESP_LOGI(TAG, "Turning off display");
     epd_send_cmd(SSD1680_CMD_DEEP_SLEEP_MODE);  // Deep sleep
     epd_send_data(SSD1680_DEEP_SLEEP_MODE_1);  // Mode 1: Retain RAM
     
     ESP_LOGI(TAG, "Display is now OFF - entering idle mode");
     
-    // Task'ı sonlandır
+    // End task
     vTaskDelete(NULL);
 }
 
@@ -406,7 +406,7 @@ void app_main(void)
     lv_display_set_flush_cb(disp, my_disp_flush);
     ESP_LOGI(TAG, "Display OK - User sees: %dx%d (Rotated: %s)", EPD_WIDTH,EPD_HEIGHT,ROTATE?"Yes":"No");
 
-    // UI - Beyaz arka plan
+    // UI - White background
     lv_obj_t *scr = lv_screen_active();
     lv_obj_set_style_bg_color(scr, lv_color_white(), 0);
     lv_obj_set_style_bg_opa(scr, LV_OPA_COVER, 0);
@@ -525,7 +525,7 @@ void app_main(void)
         ESP_LOGI(TAG, "LINE12 created");
     }
 
-    // İlk render
+    // First render
     ESP_LOGI(TAG, "Starting render...");
     for (int i = 0; i < 30; i++) {
         lv_task_handler();
@@ -543,11 +543,11 @@ void app_main(void)
         ESP_LOGE(TAG, "Timeout!");
     }
 
-    // 10 saniye sonra ekranı kapatma task'ını başlat
+    // Call screen off task after 10 seconds
     xTaskCreate(screen_off_task, "screen_off", 4096, NULL, 5, NULL);
     ESP_LOGI(TAG, "Screen off task started (will trigger in 10 seconds)");
 
-    // Ana loop
+    // Main loop
     while (1) {
         lv_task_handler();
         vTaskDelay(pdMS_TO_TICKS(100));
